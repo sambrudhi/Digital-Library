@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Commons Library</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;500;700&family=Noto+Sans+Devanagari:wght@400;700&family=Noto+Sans+Kannada:wght@400;700&display=swap">
+<style>
+:root{--bg:#f2f5f3;--surface:#fff;--ink:#12302f;--muted:#55706d;--line:#cfdad7;--accent:#0f6b63;--accent-ink:#fff;--warn:#b4570a}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1b1a;--surface:#162726;--ink:#e6f0ee;--muted:#9bb5b1;--line:#2b4543;--accent:#4cc3b5;--accent-ink:#06221f;--warn:#f0a050;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Figtree,"Noto Sans Devanagari","Noto Sans Kannada",system-ui,sans-serif}
+h1,h2,h3{font-family:"Young Serif","Noto Sans Devanagari","Noto Sans Kannada",Georgia,serif;font-weight:400;margin:0}
+header{background:var(--accent);color:var(--accent-ink);padding:22px 20px 0}
+.wrap{max-width:1000px;margin:0 auto}
+.top{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap}
+h1{font-size:clamp(1.8rem,5vw,2.8rem);line-height:1.2}
+header p{margin:6px 0 0;max-width:46ch;opacity:.9}
+.me{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.9rem}
+.me .btn.alt{color:inherit;border-color:currentColor}
+nav{display:flex;gap:4px;margin-top:20px;overflow-x:auto}
+nav button{background:transparent;color:inherit;border:0;padding:10px 16px;font:inherit;font-weight:500;cursor:pointer;border-radius:8px 8px 0 0;white-space:nowrap}
+nav button[aria-selected="true"]{background:var(--bg);color:var(--ink)}
+main{padding:24px 20px 48px}
+.stats{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:20px;color:var(--muted)}.stats b{color:var(--ink);font-size:1.3rem}
+.tools{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+input,select{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:9px 11px;min-width:0}
+.tools input[type=search]{flex:1 1 220px}
+button.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:6px;padding:8px 14px;font:inherit;font-weight:500;cursor:pointer}
+button.btn.alt{background:transparent;color:var(--ink);border:1px solid var(--line)}
+:focus-visible{outline:3px solid var(--warn);outline-offset:2px}
+.shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.book{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.spine{width:22px;flex:none}
+.bd{padding:12px 14px;display:flex;flex-direction:column;gap:4px;flex:1}
+.bd h3{font-size:1.05rem;line-height:1.3}.meta{color:var(--muted);font-size:.88rem}
+.tag{font-size:.85rem;font-weight:700}.tag.out{color:var(--warn)}.tag.in{color:var(--accent)}
+.bd .btn{margin-top:auto;align-self:flex-start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:20px;max-width:520px}
+.panel label{display:block;margin:0 0 12px;font-weight:500}.panel input,.panel select{width:100%;margin-top:4px}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.list{display:grid;gap:10px}
+.item{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 14px;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+h2{font-size:1.4rem;margin:0 0 14px}
+.empty{color:var(--muted);padding:20px 0}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{width:100%;border-collapse:collapse;background:var(--surface)}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{background:var(--bg);font-weight:700}tr:last-child td{border-bottom:0}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:6px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;text-align:center}
+#toast.on{opacity:1}
+</style>
+</head>
+<body>
+<header><div class="wrap" id="hd"></div></header>
+<main><div class="wrap" id="view"></div></main>
+<div id="toast" role="status"></div>
+<script>
+var KEY="commons-library-v2",DAYS=14;
+var CATS=["Fiction","Science","Textbook","Children","Biography","Regional"];
+var COLORS=["#0f6b63","#b4570a","#6a4c93","#c1403d","#2f6fa8","#7a8c2e"];
+// Translations: [English, Hindi, Kannada]
+var D={
+title:["Commons Library","कॉमन्स लाइब्रेरी","ಕಾಮನ್ಸ್ ಗ್ರಂಥಾಲಯ"],
+tag:["Borrow, donate and swap books with your neighbours.","अपने पड़ोसियों के साथ किताबें उधार लें, दान करें और अदला-बदली करें।","ನಿಮ್ಮ ನೆರೆಹೊರೆಯವರೊಂದಿಗೆ ಪುಸ್ತಕಗಳನ್ನು ಎರವಲು ಪಡೆಯಿರಿ, ದಾನ ಮಾಡಿ ಮತ್ತು ವಿನಿಮಯ ಮಾಡಿಕೊಳ್ಳಿ."],
+catalog:["Catalogue","सूची","ಪುಸ್ತಕ ಪಟ್ಟಿ"],
+donate:["Donate a book","किताब दान करें","ಪುಸ್ತಕ ದಾನ ಮಾಡಿ"],
+exchange:["Exchange","अदला-बदली","ವಿನಿಮಯ"],
+records:["Records","रिकॉर्ड","ದಾಖಲೆಗಳು"],
+hello:["Hello","नमस्ते","ನಮಸ್ಕಾರ"],
+logout:["Log out","लॉग आउट","ಲಾಗ್ ಔಟ್"],
+login:["Log in","लॉग इन","ಲಾಗ್ ಇನ್"],
+register:["Create account","खाता बनाएँ","ಖಾತೆ ತೆರೆಯಿರಿ"],
+name:["Full name","पूरा नाम","ಪೂರ್ಣ ಹೆಸರು"],
+phone:["Phone number","फ़ोन नंबर","ಫೋನ್ ಸಂಖ್ಯೆ"],
+pin:["4-digit PIN","4 अंकों का पिन","4 ಅಂಕಿಯ ಪಿನ್"],
+role:["Role","भूमिका","ಪಾತ್ರ"],
+member:["Member","सदस्य","ಸದಸ್ಯ"],
+librarian:["Librarian","पुस्तकालय अध्यक्ष","ಗ್ರಂಥಪಾಲಕ"],
+google:["Continue with Google","Google से जारी रखें","Google ಮೂಲಕ ಮುಂದುವರಿಸಿ"],
+googlemsg:["Google sign-in needs a server (Firebase). It is planned for the next version.","Google साइन-इन के लिए सर्वर (Firebase) चाहिए। यह अगले संस्करण में होगा।","Google ಸೈನ್-ಇನ್‌ಗೆ ಸರ್ವರ್ (Firebase) ಬೇಕು. ಇದು ಮುಂದಿನ ಆವೃತ್ತಿಯಲ್ಲಿ ಬರಲಿದೆ."],
+haveacc:["Already have an account? Log in","पहले से खाता है? लॉग इन करें","ಈಗಾಗಲೇ ಖಾತೆ ಇದೆಯೇ? ಲಾಗ್ ಇನ್ ಮಾಡಿ"],
+noacc:["New here? Create an account","नए हैं? खाता बनाएँ","ಹೊಸಬರೇ? ಖಾತೆ ತೆರೆಯಿರಿ"],
+badphone:["Enter a 10-digit phone number","10 अंकों का फ़ोन नंबर दें","10 ಅಂಕಿಯ ಫೋನ್ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ"],
+badpin:["PIN must be 4 digits","पिन 4 अंकों का होना चाहिए","ಪಿನ್ 4 ಅಂಕಿಗಳಿರಬೇಕು"],
+badname:["Enter your name","अपना नाम दें","ನಿಮ್ಮ ಹೆಸರು ನಮೂದಿಸಿ"],
+exists:["This number is already registered","यह नंबर पहले से पंजीकृत है","ಈ ಸಂಖ್ಯೆ ಈಗಾಗಲೇ ನೋಂದಣಿಯಾಗಿದೆ"],
+wrong:["Wrong phone number or PIN","फ़ोन नंबर या पिन गलत है","ಫೋನ್ ಸಂಖ್ಯೆ ಅಥವಾ ಪಿನ್ ತಪ್ಪಾಗಿದೆ"],
+search:["Search by title or author","शीर्षक या लेखक से खोजें","ಶೀರ್ಷಿಕೆ ಅಥವಾ ಲೇಖಕರಿಂದ ಹುಡುಕಿ"],
+allcat:["All categories","सभी श्रेणियाँ","ಎಲ್ಲಾ ವರ್ಗಗಳು"],
+availonly:["Available only","केवल उपलब्ध","ಲಭ್ಯವಿರುವುದು ಮಾತ್ರ"],
+books:["books","किताबें","ಪುಸ್ತಕಗಳು"],
+availnow:["available now","अभी उपलब्ध","ಈಗ ಲಭ್ಯ"],
+available:["Available","उपलब्ध","ಲಭ್ಯ"],
+borrowed:["Borrowed","उधार दी गई","ಎರವಲು ನೀಡಲಾಗಿದೆ"],
+borrow:["Borrow","उधार लें","ಎರವಲು ಪಡೆಯಿರಿ"],
+return:["Return","लौटाएँ","ಹಿಂತಿರುಗಿಸಿ"],
+returned:["Returned","लौटाई गई","ಹಿಂತಿರುಗಿಸಲಾಗಿದೆ"],
+overdue:["Overdue","देर से","ತಡವಾಗಿದೆ"],
+due:["Due","देय तिथि","ಹಿಂದಿರುಗಿಸಬೇಕಾದ ದಿನಾಂಕ"],
+borrowedon:["Borrowed on","उधार की तिथि","ಎರವಲು ಪಡೆದ ದಿನಾಂಕ"],
+book:["Book","किताब","ಪುಸ್ತಕ"],
+borrower:["Borrower","उधार लेने वाला","ಎರವಲುದಾರ"],
+status:["Status","स्थिति","ಸ್ಥಿತಿ"],
+action:["Action","कार्रवाई","ಕ್ರಮ"],
+titlef:["Title","शीर्षक","ಶೀರ್ಷಿಕೆ"],
+author:["Author","लेखक","ಲೇಖಕರು"],
+category:["Category","श्रेणी","ವರ್ಗ"],
+condition:["Condition","हालत","ಗುಣಮಟ್ಟ"],
+donby:["donated by","दानकर्ता","ದಾನಿ"],
+add:["Add to library","पुस्तकालय में जोड़ें","ಗ್ರಂಥಾಲಯಕ್ಕೆ ಸೇರಿಸಿ"],
+noresults:["No books match.","कोई किताब नहीं मिली।","ಯಾವುದೇ ಪುಸ್ತಕ ಸಿಗಲಿಲ್ಲ."],
+norecords:["No records yet.","अभी कोई रिकॉर्ड नहीं है।","ಇನ್ನೂ ಯಾವುದೇ ದಾಖಲೆಗಳಿಲ್ಲ."],
+offers:["Open swap offers","खुले अदला-बदली प्रस्ताव","ಮುಕ್ತ ವಿನಿಮಯ ಪ್ರಸ್ತಾಪಗಳು"],
+wants:["Wants","चाहिए","ಬೇಕಾಗಿರುವುದು"],
+by:["by","द्वारा","ಇವರಿಂದ"],
+reqswap:["Request swap","अदला-बदली माँगें","ವಿನಿಮಯ ಕೋರಿ"],
+withdraw:["Withdraw","वापस लें","ಹಿಂಪಡೆಯಿರಿ"],
+offerbook:["Offer a book to swap","अदला-बदली के लिए किताब दें","ವಿನಿಮಯಕ್ಕೆ ಪುಸ್ತಕ ನೀಡಿ"],
+have:["Book you have","आपके पास की किताब","ನಿಮ್ಮಲ್ಲಿರುವ ಪುಸ್ತಕ"],
+want:["Book you want","आपको चाहिए वाली किताब","ನಿಮಗೆ ಬೇಕಾದ ಪುಸ್ತಕ"],
+post:["Post offer","प्रस्ताव डालें","ಪ್ರಸ್ತಾಪ ಪೋಸ್ಟ್ ಮಾಡಿ"],
+requested:["Requested","अनुरोध किया गया","ಕೋರಲಾಗಿದೆ"],
+myrec:["My borrowing history","मेरा उधार इतिहास","ನನ್ನ ಎರವಲು ಇತಿಹಾಸ"],
+allrec:["All borrower records","सभी उधारकर्ताओं के रिकॉर्ड","ಎಲ್ಲಾ ಎರವಲುದಾರರ ದಾಖಲೆಗಳು"],
+tBorrow:["Borrowed. Return by","उधार ली गई। लौटाने की तिथि","ಎರವಲು ಪಡೆಯಲಾಗಿದೆ. ಹಿಂತಿರುಗಿಸುವ ದಿನಾಂಕ"],
+tReturn:["Returned. Thank you!","लौटा दी गई। धन्यवाद!","ಹಿಂತಿರುಗಿಸಲಾಗಿದೆ. ಧನ್ಯವಾದಗಳು!"],
+tDonate:["Thank you! Book added.","धन्यवाद! किताब जोड़ दी गई।","ಧನ್ಯವಾದಗಳು! ಪುಸ್ತಕ ಸೇರಿಸಲಾಗಿದೆ."],
+tPost:["Offer posted","प्रस्ताव डाल दिया गया","ಪ್ರಸ್ತಾಪ ಪೋಸ್ಟ್ ಮಾಡಲಾಗಿದೆ"],
+tSwap:["Swap requested","अदला-बदली का अनुरोध भेजा गया","ವಿನಿಮಯ ಕೋರಲಾಗಿದೆ"],
+tFill:["Please fill in all fields","कृपया सभी जानकारी भरें","ದಯವಿಟ್ಟು ಎಲ್ಲಾ ವಿವರಗಳನ್ನು ಭರ್ತಿ ಮಾಡಿ"],
+Fiction:["Fiction","कथा","ಕಥೆ"],Science:["Science","विज्ञान","ವಿಜ್ಞಾನ"],Textbook:["Textbook","पाठ्यपुस्तक","ಪಠ್ಯಪುಸ್ತಕ"],
+Children:["Children","बाल साहित्य","ಮಕ್ಕಳ ಸಾಹಿತ್ಯ"],Biography:["Biography","जीवनी","ಜೀವನಚರಿತ್ರೆ"],Regional:["Regional","क्षेत्रीय","ಪ್ರಾದೇಶಿಕ"],
+Good:["Good","अच्छी","ಚೆನ್ನಾಗಿದೆ"],Fair:["Fair","ठीक-ठाक","ಸಾಧಾರಣ"],"Like new":["Like new","नई जैसी","ಹೊಸದರಂತೆ"]
+};
+var LI={en:0,hi:1,kn:2},LOC={en:"en-IN",hi:"hi-IN",kn:"kn-IN"};
+function t(k){var a=D[k];return a?(a[LI[S.lang]]||a[0]):k}
+function $(i){return document.getElementById(i)}
+function seed(){var b=[["Wings of Fire","A. P. J. Abdul Kalam","Biography"],["Malgudi Days","R. K. Narayan","Fiction"],["Cosmos","Carl Sagan","Science"],["Engineering Mathematics","B. S. Grewal","Textbook"],["Panchatantra Tales","Vishnu Sharma","Children"],["Mookajjiya Kanasugalu","K. Shivarama Karanth","Regional"],["A Brief History of Time","Stephen Hawking","Science"],["The Room on the Roof","Ruskin Bond","Fiction"]];
+return{lang:"en",cur:"",users:{},records:[],donated:0,seq:20,
+books:b.map(function(x,i){return{id:i+1,title:x[0],author:x[1],cat:x[2],cond:"Good",donor:"Community",by:null}}),
+offers:[{id:1,have:"Malgudi Days",want:"Any science book",by:"Asha",ph:"",status:"Open"},{id:2,have:"Engineering Physics (2nd ed.)",want:"Engineering Chemistry",by:"Ravi",ph:"",status:"Open"}]}}
+var S;try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!S)S=seed();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function me(){return S.users[S.cur]}
+function isLib(){return me().role==="lib"}
+function toast(m){var e=$("toast");e.textContent=m;e.className="on";setTimeout(function(){e.className=""},2600)}
+function fmt(d){return new Date(d).toLocaleDateString(LOC[S.lang],{day:"numeric",month:"short",year:"numeric"})}
+function active(id){return S.records.filter(function(r){return r.bid===id&&!r.ret})[0]}
+var tab="catalog",mode="login",q="",cat="",avail=false;
+var TABS=["catalog","donate","exchange","records"];
+
+function head(){var u=S.cur&&me();
+$("hd").innerHTML='<div class="top"><div><h1>'+t("title")+'</h1><p>'+t("tag")+'</p></div><div class="me"><select id="lang" aria-label="Language"><option value="en">English</option><option value="hi">हिन्दी</option><option value="kn">ಕನ್ನಡ</option></select>'+
+(u?'<span>'+t("hello")+', '+esc(u.name)+' ('+t(u.role==="lib"?"librarian":"member")+')</span><button class="btn alt" id="out">'+t("logout")+'</button>':'')+'</div></div>'+
+(u?'<nav role="tablist">'+TABS.map(function(k){return'<button role="tab" aria-selected="'+(tab===k)+'" data-t="'+k+'">'+t(k)+'</button>'}).join("")+'</nav>':'<div style="height:24px"></div>');
+$("lang").value=S.lang}
+$("hd").onclick=function(e){if(e.target.dataset.t){tab=e.target.dataset.t;render()}if(e.target.id==="out"){S.cur="";save();mode="login";render()}};
+$("hd").onchange=function(e){if(e.target.id==="lang"){S.lang=e.target.value;save();render()}};
+
+function card(b){var c=COLORS[CATS.indexOf(b.cat)]||COLORS[0],out=!!b.by,r=out&&active(b.id);
+var btn=!out?'<button class="btn" data-a="borrow" data-id="'+b.id+'">'+t("borrow")+'</button>':(b.by===S.cur?'<button class="btn alt" data-a="return" data-id="'+b.id+'">'+t("return")+'</button>':'');
+return'<div class="book"><div class="spine" style="background:'+c+'"></div><div class="bd"><h3>'+esc(b.title)+'</h3><div class="meta">'+esc(b.author)+'</div><div class="meta">'+t(b.cat)+' · '+t(b.cond)+' · '+t("donby")+' '+esc(b.donor)+'</div>'+
+(out&&r?'<div class="tag out">'+t("borrowed")+', '+t("due")+' '+fmt(r.due)+'</div>':'<div class="tag in">'+t("available")+'</div>')+btn+'</div></div>'}
+
+function auth(){var reg=mode==="reg";
+return'<div class="panel"><h2>'+t(reg?"register":"login")+'</h2><form onsubmit="return false">'+
+(reg?'<label>'+t("name")+'<input id="an" maxlength="30"></label>':'')+
+'<label>'+t("phone")+'<input id="ap" inputmode="numeric" maxlength="10"></label><label>'+t("pin")+'<input id="apin" type="password" inputmode="numeric" maxlength="4"></label>'+
+(reg?'<label>'+t("role")+'<select id="ar"><option value="mem">'+t("member")+'</option><option value="lib">'+t("librarian")+'</option></select></label>':'')+
+'<div class="row"><button class="btn" id="ago" type="button">'+t(reg?"register":"login")+'</button><button class="btn alt" id="gg" type="button">'+t("google")+'</button></div></form>'+
+'<p class="meta"><a href="#" id="sw">'+t(reg?"haveacc":"noacc")+'</a></p></div>'}
+
+function render(){head();var v=$("view"),h="";
+if(!S.cur){v.innerHTML=auth();bind();return}
+if(tab==="catalog"){var n=S.books.length,a=S.books.filter(function(b){return!b.by}).length;
+var L=S.books.filter(function(b){return(!q||(b.title+b.author).toLowerCase().indexOf(q.toLowerCase())>-1)&&(!cat||b.cat===cat)&&(!avail||!b.by)});
+h='<div class="stats"><span><b>'+n+'</b> '+t("books")+'</span><span><b>'+a+'</b> '+t("availnow")+'</span></div><div class="tools"><input id="q" type="search" placeholder="'+t("search")+'" aria-label="'+t("search")+'" value="'+esc(q)+'"><select id="cat" aria-label="'+t("category")+'"><option value="">'+t("allcat")+'</option>'+CATS.map(function(c){return'<option value="'+c+'"'+(c===cat?' selected':'')+'>'+t(c)+'</option>'}).join("")+'</select><label class="meta" style="align-self:center"><input type="checkbox" id="av"'+(avail?' checked':'')+'> '+t("availonly")+'</label></div>'+
+(L.length?'<div class="shelf">'+L.map(card).join("")+'</div>':'<div class="empty">'+t("noresults")+'</div>')}
+if(tab==="donate"){h='<h2>'+t("donate")+'</h2><form class="panel" onsubmit="return false"><label>'+t("titlef")+'<input id="dt"></label><label>'+t("author")+'<input id="da"></label><div class="row"><label style="flex:1">'+t("category")+'<select id="dc">'+CATS.map(function(c){return'<option value="'+c+'">'+t(c)+'</option>'}).join("")+'</select></label><label style="flex:1">'+t("condition")+'<select id="dd">'+["Good","Fair","Like new"].map(function(c){return'<option value="'+c+'">'+t(c)+'</option>'}).join("")+'</select></label></div><button class="btn" id="dsub" type="button">'+t("add")+'</button></form>'}
+if(tab==="exchange"){h='<h2>'+t("offers")+'</h2><div class="list">'+S.offers.map(function(o){return'<div class="item"><div><b>'+esc(o.have)+'</b><div class="meta">'+t("wants")+': '+esc(o.want)+' · '+t("by")+' '+esc(o.by)+'</div></div>'+(o.status==="Open"?(o.ph===S.cur?'<button class="btn alt" data-a="cancel" data-id="'+o.id+'">'+t("withdraw")+'</button>':'<button class="btn" data-a="swap" data-id="'+o.id+'">'+t("reqswap")+'</button>'):'<span class="tag out">'+t("requested")+': '+esc(o.req||"")+'</span>')+'</div>'}).join("")+'</div>'+
+'<h2 style="margin-top:28px">'+t("offerbook")+'</h2><form class="panel" onsubmit="return false"><label>'+t("have")+'<input id="eh"></label><label>'+t("want")+'<input id="ew"></label><button class="btn" id="esub" type="button">'+t("post")+'</button></form>'}
+if(tab==="records"){var lib=isLib(),rows=(lib?S.records:S.records.filter(function(r){return r.phone===S.cur})).slice().reverse();
+h='<h2>'+t(lib?"allrec":"myrec")+'</h2>'+(rows.length?'<div class="tw"><table><thead><tr>'+(lib?'<th>'+t("borrower")+'</th><th>'+t("phone")+'</th>':'')+'<th>'+t("book")+'</th><th>'+t("borrowedon")+'</th><th>'+t("due")+'</th><th>'+t("status")+'</th><th>'+t("action")+'</th></tr></thead><tbody>'+
+rows.map(function(r){var st=r.ret?t("returned"):(r.due<Date.now()?t("overdue"):t("borrowed")),late=!r.ret&&r.due<Date.now();
+return'<tr>'+(lib?'<td>'+esc(r.name)+'</td><td>'+esc(r.phone)+'</td>':'')+'<td>'+esc(r.title)+'</td><td>'+fmt(r.on)+'</td><td>'+fmt(r.due)+'</td><td'+(late?' style="color:var(--warn);font-weight:700"':'')+'>'+st+'</td><td>'+(!r.ret&&(lib||r.phone===S.cur)?'<button class="btn alt" data-a="return" data-id="'+r.bid+'">'+t("return")+'</button>':'')+'</td></tr>'}).join("")+'</tbody></table></div>':'<div class="empty">'+t("norecords")+'</div>')}
+v.innerHTML=h;bind()}
+
+function bind(){var e;
+if($("sw"))$("sw").onclick=function(ev){ev.preventDefault();mode=mode==="reg"?"login":"reg";render()};
+if($("gg"))$("gg").onclick=function(){toast(t("googlemsg"))};
+if($("ago"))$("ago").onclick=function(){var ph=$("ap").value.trim(),pin=$("apin").value;
+if(!/^\d{10}$/.test(ph)){toast(t("badphone"));return}
+if(!/^\d{4}$/.test(pin)){toast(t("badpin"));return}
+if(mode==="reg"){var nm=$("an").value.trim();if(!nm){toast(t("badname"));return}
+if(S.users[ph]){toast(t("exists"));return}
+S.users[ph]={name:nm,pin:pin,role:$("ar").value}}
+else if(!S.users[ph]||S.users[ph].pin!==pin){toast(t("wrong"));return}
+S.cur=ph;tab="catalog";save();render()};
+if(e=$("q"))e.oninput=function(){q=e.value;var p=e.selectionStart;render();var n=$("q");n.focus();n.setSelectionRange(p,p)};
+if(e=$("cat"))e.onchange=function(){cat=e.value;render()};
+if(e=$("av"))e.onchange=function(){avail=e.checked;render()};
+if($("dsub"))$("dsub").onclick=function(){var ti=$("dt").value.trim(),au=$("da").value.trim();if(!ti||!au){toast(t("tFill"));return}
+S.books.unshift({id:S.seq++,title:ti,author:au,cat:$("dc").value,cond:$("dd").value,donor:me().name,by:null});S.donated++;save();tab="catalog";render();toast(t("tDonate"))};
+if($("esub"))$("esub").onclick=function(){var h=$("eh").value.trim(),w=$("ew").value.trim();if(!h||!w){toast(t("tFill"));return}
+S.offers.unshift({id:S.seq++,have:h,want:w,by:me().name,ph:S.cur,status:"Open"});save();render();toast(t("tPost"))}}
+
+$("view").addEventListener("click",function(e){var a=e.target.dataset.a;if(!a)return;var id=+e.target.dataset.id;
+var b=S.books.filter(function(x){return x.id===id})[0],o=S.offers.filter(function(x){return x.id===id})[0];
+if(a==="borrow"&&b&&!b.by){var now=Date.now(),due=now+DAYS*864e5;b.by=S.cur;S.records.push({id:S.seq++,bid:b.id,title:b.title,name:me().name,phone:S.cur,on:now,due:due,ret:null});toast(t("tBorrow")+" "+fmt(due))}
+if(a==="return"&&b){var r=active(id);if(r)r.ret=Date.now();b.by=null;toast(t("tReturn"))}
+if(a==="swap"&&o){o.status="Requested";o.req=me().name;toast(t("tSwap"))}
+if(a==="cancel"){S.offers=S.offers.filter(function(x){return x.id!==id})}
+save();render()});
+render();
+</script>
+</body>
+</html>
